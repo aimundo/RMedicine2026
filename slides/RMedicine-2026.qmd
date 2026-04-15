@@ -1,0 +1,254 @@
+---
+title: "Parallel computing in R to analyze big health data"
+subtitle: "R Medicine 2026 <br>Lightning Talk"
+author:
+  - name: "Ariel Mundo Ortiz"
+    affiliation:
+      - "Centre de recherche <br>Centre hospitalier de l'Université de Montréal"
+date: last-modified
+date-format: "05 08, 2026"
+format:
+  revealjs:
+    theme: 
+      - default
+      - slides.scss
+    incremental: true
+    title-slide-attributes:
+      data-background-image: "img/rmed_background.png"
+      data-background-size: cover
+      data-background-opacity: "50"
+    fontsize: 2em
+    html-math-method: mathjax
+    slide-number: c/t
+    show-slide-number: all
+    highlight-style: rstudio_default-light.theme
+    logo: "img/rmed.png"
+    footer: "[Slides are here](https://github.com/aimundo/RMedicine2026){target='_blank'}"  # complete the URL
+    include-after-body: "img/clean_title_page.html"
+include-in-header:
+  text: |
+    <link rel="shortcut icon" href="img/rmed.ico"/>
+embed-resources: true   # true = a single file, false = multiple files
+knitr:
+  opts_chunk:      ########## set global options ############
+    collapse: true # keep code from blocks together (if shown)
+    echo: false    # don't show code
+    message: true  # show messages
+    warning: true  # show warnings
+    error: true    # show error messages
+    comment: ""    # don't show ## with printed output
+    R.options:   
+      digits: 3    # round to three digits
+editor_options:
+  chunk_output_type: console
+editor: source
+highlight-style: rstudio_default-light.theme
+bibliography: refs/refs.bib
+csl: jama.csl
+---
+ 
+# Introduction
+
++ Big health data provides opportunities for personalized care[@galetsi2019].
++ Electronic health records (EHRs) are a form of big health data that are useful for biomedical research[@singhal2023].
+  + EHRs can contain:
+  + Laboratory data
+  + Vital signs
+  + Imaging
+
+## Introduction
+
+Analysing EHRs can be challenging:<br>
+
+  + Millions of observations.<br>
+  
+  + Hundreds of thousands of individuals.<br>
+  
+  + They are accessed through secure systems<br>
+  
+  + Computationally, you may need a good amount of memory just to run exploratory analyses<br>
+  
+  
++ Running analysis in a 'traditional' manner can take a long time.
+
+  
+## An example
+
++ Ongoing study about vital signs in older adults.<br>
+
++ Our goal is to examine temperature thresholds for fever.<br>
+
+
++ Data lake from the centre hospitalier de l'Université de Montréal<br>
+
+  + From 2012 to 2024
+  + 8,500,000 measurements
+  + 264,000 patients
+  + 5 age groups
+  
+## An example
+  
+  + In age group: 55-64 years<br>
+    + 2,263,642 observations<br>
+    + 71,831 unique patients<br>
+
++ We have a clinical outcome<br>
+
++ We want to know how setting a temperature threshold changes the likelihood of the clinical outcome.<br>
+
++ In our model, we use a 'test' to dichotomize temperature values according to a threshold. We include random effects by patient.
+  
+## An example 
+
+Regression model
+
+```{r}
+#| eval: false
+#| echo: true
+glmer (outcome ~ test + (1 | patient_id), 
+       data = data, 
+       family = binomial,
+       nAGQ = 0)
+```
+
++ We need to run this model at 6 different thresholds. This implies running the model 6 times.<br>
+
++ We could run a loop to do this...<br>
+
++ Or use a functional!<br>
+
+## An example
+
++ In a 'traditional' (sequential) manner, we would use **{{purrr}}**:<br>
+
+
+
+```{r}
+#| eval: false
+#| echo: true
+
+mod_wrapper <- function(value, data) {
+
+  data1 <- data %>%
+    mutate(test = ifelse(temperature < {{ value }}, 0 ,1))
+  
+  glmer (outcome ~ test + (1 | patient_id), 
+       data = data1, 
+       family = binomial,
+       nAGQ = 0)
+  
+}
+
+values <- seq(37.0, 38.5, by = 0.3)
+
+res <- map(values, mod_wrapper, data)
+
+
+```
+
++ This takes... 27 minutes to complete in a shared machine with 128GB of RAM.
+
+## The issue
+
++ You need to create confidence intervals for your estimates.<br>
+
++ Use the bootstrap<br>
+
++ If you do a bootstrap with n = 1,000:<br>
+  
+  + It would take **19** days to run this age group.<br>
+ 
+  + It would take **95** days to run all age groups.<br>
+ 
++ Not even considering the resampling part.<br>
+
++ We would need to run sensitivity analyses as well.
+
+## Solution: Parallel computing
+
++ Usually, we don't think R = parallel computing<br>
+
++ The **{{future}}** and **{{mirai}}** libraries offer a powerful, easy way to implement code in parallel<br>
+
++ **{{future}}** implements `future_map` in  **{{furrr}}** -> Same syntax as `map`[@future]<br>
+
++ **{{mirai}}** implements `daemons` (persistent background processes)[@mirai]<br>
+
+
+## Going back to our example {.smaller}
+
++ Only some minimal changes required!
+
+```{r}
+#| eval: false
+#| echo: true
+#| code-line-numbers: "|1|2|3|20|22|24|26"
+
+library(mirai)
+library(furrr)
+library(future.mirai) 
+
+
+mod_wrapper <- function(value, data) {
+
+  data1 <- data %>%
+    mutate(test = ifelse(temperature < {{ value }}, 0 ,1))
+  
+  glmer (outcome ~ test + (1 | patient_id), 
+       data = data1, 
+       family = binomial,
+       nAGQ = 0)
+  
+}
+
+values <- seq(37.0, 38.5, by = 0.3)
+
+daemons(6) # run 6 background processes, 1 for each value in values (mirai)
+
+plan(mirai_cluster) #we tell future to use the mirai backend to parallelise
+
+res <- future_map(values, mod_wrapper, data) #future_map will use the plan we declared above, and parallelise
+
+plan(sequential) # we close the connections (free memory)
+```
+
+
+## Going back to our example
+
++ Effectively, we are doing this:
+
+:::: {.columns}
+
+
+::: {.column width="60%"}
+![](img/diagram.png){.fragment}
+:::
+
+::: {.column width="40%"}
+
++ And how long does it take?
+
++ **7** minutes in a computer cluster with 128GB <br>
+
++ As always, running code in parallel in _n_ chunks does not reduce the time by _n_.
+:::
+
+::::
+
+## Gotchas & Conclusions
+
++ You most likely need a cluster to run your code in parallel. <br>
+
++ **{{mirai}}** and **{{future}}** are easy to implement with Slurm.<br>
+
++ Want code to run faster? (more daemons) =  More memory and CPUs required.<br>
+
++ In our real life application, running the bootstrap (incluiding resampling) took 4 days for the age group above.<br>
+
++ You can also run nested `future_map` calls!<br>
+
++ Now, memory-intensive analyses with big health data are possible with parallel computing!
+ 
+
+
+## References
