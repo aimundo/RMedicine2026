@@ -76,8 +76,6 @@ Analysing EHRs can be challenging:<br>
 
 + Ongoing study about vital signs in older adults.<br>
 
-+ Our goal is to examine temperature thresholds for fever.<br>
-
 
 + Data lake from the centre hospitalier de l'Université de Montréal<br>
 
@@ -86,17 +84,16 @@ Analysing EHRs can be challenging:<br>
   + 264,000 patients
   + 5 age groups
   
++ We are studying changes in the likelihood of a clinical outcome due to body temperature.<br>
+  
 ## An example
   
   + In age group: 55-64 years<br>
-    + 2,263,642 observations<br>
+    + 2,263,642 temperature observations<br>
     + 71,831 unique patients<br>
 
-+ We have a clinical outcome<br>
 
-+ We want to know how setting a temperature threshold changes the likelihood of the clinical outcome.<br>
-
-+ In our model, we use a 'test' to dichotomize temperature values according to a threshold. We include random effects by patient.
++ We dichotomize temperature values according to a threshold. We include random effects by patient.
   
 ## An example 
 
@@ -111,7 +108,7 @@ glmer (outcome ~ test + (1 | patient_id),
        nAGQ = 0)
 ```
 
-+ We need to run this model at 6 different thresholds. This implies running the model 6 times.<br>
++ We obtain an estimate after running this model at 6 different thresholds.<br>
 
 + We could run a loop to do this...<br>
 
@@ -119,7 +116,7 @@ glmer (outcome ~ test + (1 | patient_id),
 
 ## An example
 
-+ In a 'traditional' (sequential) manner, we would use **{{purrr}}**:<br>
+ In a 'traditional' (sequential) manner, we would use **{{purrr}}}** :<br>
 
 
 
@@ -162,13 +159,12 @@ res <- map(values, mod_wrapper, data)
  
 + Not even considering the resampling part.<br>
 
-+ We would need to run sensitivity analyses as well.
 
-## Solution: Parallel computing
+## Solution: Parallel computing 
 
-+ Usually, we don't think R = parallel computing<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;![](img/future.png){width="15%"}&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  ![](img/mirai.png){width="15%"}
 
-+ The **{{future}}** and **{{mirai}}** libraries offer a powerful, easy way to implement code in parallel<br>
++ These libraries offer an easy way to implement code in parallel<br>
 
 + **{{future}}** implements `future_map` in  **{{furrr}}** -> Same syntax as `map`[@future]<br>
 
@@ -177,7 +173,7 @@ res <- map(values, mod_wrapper, data)
 
 ## Going back to our example {.smaller}
 
-+ Only some minimal changes required!
+ Only some minimal changes required!
 
 ```{r}
 #| eval: false
@@ -228,7 +224,7 @@ plan(sequential) # we close the connections (free memory)
 
 + And how long does it take?
 
-+ **7** minutes in a computer cluster with 128GB <br>
++ **7** minutes in 1 node of a cluster with 128GB of RAM <br>
 
 + As always, running code in parallel in _n_ chunks does not reduce the time by _n_.
 :::
@@ -239,16 +235,13 @@ plan(sequential) # we close the connections (free memory)
 
 + You most likely need a cluster to run your code in parallel. <br>
 
-+ **{{mirai}}** and **{{future}}** are easy to implement with Slurm.<br>
++ You can integrate parallelisation with Slurm.<br>
 
 + Want code to run faster? (more daemons) =  More memory and CPUs required.<br>
 
-+ In our real life application, running the bootstrap (incluiding resampling) took 4 days for the age group above.<br>
-
 + You can also run nested `future_map` calls!<br>
 
-+ Now, memory-intensive analyses with big health data are possible with parallel computing!
- 
++ There are other libraries for parallelisation:  **{{parallel}}**, **{{foreach}}**
 
 
 ## References
