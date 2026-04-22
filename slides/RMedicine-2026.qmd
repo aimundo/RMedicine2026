@@ -47,14 +47,17 @@ bibliography: refs/refs.bib
 csl: jama.csl
 ---
  
-# Introduction
+# Big health data:
 
-+ Big health data provides opportunities for personalized care[@galetsi2019].
+> High volume, high diversity biological, clinical, environmental, and lifestyle information collected from single individuals to large cohorts, in relation to their health and wellness status, at one or several time points[@auffray2016]. 
+
 + Electronic health records (EHRs) are a form of big health data that are useful for biomedical research[@singhal2023].
   + EHRs can contain:
   + Laboratory data
   + Vital signs
   + Imaging
+  + Medical notes
+  + Etc
 
 ## Introduction
 
@@ -244,4 +247,11 @@ plan(sequential) # we close the connections (free memory)
 + There are other libraries for parallelisation:  **{{parallel}}**, **{{foreach}}**
 
 
-## References
+# Acknowledgements
+
+- Henrik Bengtsson, Charlie Gao.
+- The NG Lab @ CRCHUM.
+
+
+# References
+
