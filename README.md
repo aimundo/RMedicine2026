@@ -8,4 +8,6 @@ Slides can be found in the slides folder.
 # Some resources about parallel computing with **{{future}}** and **{{mirai}}**
   - Remote launch of daemons in a computer cluster (Slurm): https://mirai.r-lib.org/reference/cluster_config.html
   - Nested `future_map` calls: https://cran.r-project.org/web/packages/future/vignettes/future-3-topologies.html
+  - Improving memory usage:
+  -   The recently released package [{{mori}}](https://github.com/shikokuchuo/mori) reduces memory usage in parallel computing by creating an object that is shared across parallel processes!
 
