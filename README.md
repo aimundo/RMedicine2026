@@ -14,5 +14,7 @@ Slides can be found in the slides folder.
   - Improving memory usage:
   -   The recently released package [{{mori}}](https://github.com/shikokuchuo/mori) reduces memory usage in parallel computing by creating an object that is shared across parallel processes!
 
+  -   In the real implementation  of the code shown in the slides, using mori reduced memory  usage by 15%:
 
-<img width="907" height="562" src="slides/img/mori_example.png" />
+
+<img width="400" height="300" src="slides/img/mori_example.png" />
