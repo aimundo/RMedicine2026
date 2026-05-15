@@ -3,7 +3,8 @@ This is the repository for the Ligthinig Talk at R/Medicine 2026 about parallel 
 <p align="center">
 <img src="slides/img/rmed.png" alt="Alt Text" width="200" height="200" class="center">
 </p>
-Slides can be found in the slides folder.
+
+Slides can be found **[here](https://aimundo.github.io/RMedicine2026/slides/RMedicine-2026.html#/title-slide)**.
 
 # Some resources about parallel computing with **{{future}}** and **{{mirai}}**
 
